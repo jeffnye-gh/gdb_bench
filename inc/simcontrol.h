@@ -1,29 +1,48 @@
+#pragma once
 #include "gdb-server/GdbServer.hpp"
 #include "gdb-server/Utils.hpp"
 
 #include "gdb-server/SimulationControlInterface.hpp"
-#include <iostream>
+#include <thread>
+#include <chrono>
 
 class SimControl : public SimulationControlInterface {
- public:
+public:
+
+  SimControl()
+    : _serverRunning(false),
+      _stopServer(false),
+      _stalled(true)
+  {}
+
+    void runSimulation() {
+        while (!shouldStopServer()) {
+            if (!isStalled()) {
+                // Simulate some processing
+                std::this_thread::sleep_for(std::chrono::milliseconds(100));
+                std::cout << "Simulating a running process..." << std::endl;
+            }
+        }
+        std::cout << "Simulation stopped." << std::endl;
+    }
+
+  void setServerRunning(bool running) { _serverRunning = running; }
+  bool isServerRunning() override { return _serverRunning; }
+
+  void stopServer()              override { _stopServer = true; }
+  void setStopServer(bool stop)  { _stopServer = stop; }
+  bool shouldStopServer()  override { return _stopServer; }
+
+  void stall()              { _stalled = true;  }
+  void unstall()            { _stalled = false; }
+  bool isStalled() override { return _stalled;  }
+
   void kill() override {
       std::cout << "Simulation killed.\n";
   }
 
   void reset() override {
       std::cout << "Simulation reset.\n";
-  }
-
-  void stall() override {
-      std::cout << "Simulation stalled.\n";
-  }
-
-  void unstall() override {
-      std::cout << "Simulation unstalled.\n";
-  }
-
-  bool isStalled() override {
-      return true;  // Return an appropriate value for your testing
   }
 
   void step() override {
@@ -69,21 +88,21 @@ class SimControl : public SimulationControlInterface {
       return 4;  // Assume 4-byte word size for this example
   }
 
-  void stopServer() override {
-      std::cout << "Server stopped.\n";
-  }
+//  void stopServer() override {
+//      std::cout << "Server stopped.\n";
+//  }
 
-  bool shouldStopServer() override {
-      return false;  // Return a mock value
-  }
+//  bool shouldStopServer() override {
+//      return false;  // Return a mock value
+//  }
 
-  bool isServerRunning() override {
-      return true;  // Return mock running status
-  }
+//  bool isServerRunning() override {
+//      return true;  // Return mock running status
+//  }
 
-  void setServerRunning(bool status) override {
-      std::cout << "Server running status set to " << status << "\n";
-  }
+//  void setServerRunning(bool status) override {
+//      std::cout << "Server running status set to " << status << "\n";
+//  }
 
   uint32_t htotl(uint32_t hostVal) override {
       return hostVal;  // Mock implementation; no endianness change
@@ -92,4 +111,8 @@ class SimControl : public SimulationControlInterface {
   uint32_t ttohl(uint32_t targetVal) override {
       return targetVal;  // Mock implementation; no endianness change
   }
+
+    bool _serverRunning;
+    bool _stopServer;
+    bool _stalled;
 };
