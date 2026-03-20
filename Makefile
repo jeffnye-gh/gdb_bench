@@ -1,7 +1,13 @@
 .PHONY: clean run lib_spdlog.built lib_gdb_server.built
 
 CPP = g++
-GDB_TOP := $(realpath $(dir $(lastword $(MAKEFILE_LIST))))
+THIS_TOP := $(realpath $(dir $(lastword $(MAKEFILE_LIST))))
+JNU_TOP := $(THIS_TOP)/..
+SPD_LOG := $(THIS_TOP)/../spdlog
+GDB_TOP := $(THIS_TOP)/../gdb
+
+GDB_SERV := $(GDB_TOP)/gdb-server
+
 TARGET = bin/gdb_example
 # --------------------------------------------------------------
 ALL_SRC=$(wildcard src/*.cpp)
@@ -14,7 +20,8 @@ INC  = -I./inc -Igdb-server/include
 OPT  = -g
 STD  = -std=c++20
 WARN = -Wall
-LIBS = -Lgdb-server/build/src -lgdb-server -Lspdlog/install/lib -lspdlog
+LIBS = -L$(GDB_SERV)/build/src -lgdb-server \
+       -L$(SPD_LOG)/install/lib -lspdlog
 
 CFLAGS   = $(OPT) $(DEP) $(DEF) $(INC)
 CPPFLAGS = $(CFLAGS) $(STD)
@@ -32,15 +39,15 @@ $(TARGET):  $(ALL_OBJ) obj/lib_spdlog.built obj/lib_gdb_server.built
 	$(CPP) $(LDFLAGS) $^ -o $@ $(LIBS)
 
 obj/lib_spdlog.built:
-	cd spdlog && mkdir -p build && cd build &&  \
+	cd ../spdlog && mkdir -p build && cd build &&  \
 	cmake -DCMAKE_INSTALL_PREFIX=../install .. && \
   make -j && make install
-	touch obj/lib_spdlog.built
+	touch $(THIS_TOP)/obj/lib_spdlog.built
 
 obj/lib_gdb_server.built:
 	cd gdb-server && mkdir -p build && cd build && \
-	cmake .. -Dspdlog_DIR=$(GDB_TOP)/spdlog/install/lib/cmake/spdlog && make -j
-	touch obj/lib_gdb_server.built
+	cmake .. -Dspdlog_DIR=$(SPD_LOG)/install/lib/cmake/spdlog && make -j
+	touch $(THIS_TOP)/obj/lib_gdb_server.built
 
 run:  $(TARGET)
 	$(TARGET)
@@ -49,28 +56,6 @@ clean:
 	-rm -rf bin/* obj/*
 	cd spdlog; rm -rf build
 	cd gdb-server; rm -rf build
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 -include $(ALL_DEP)
 
